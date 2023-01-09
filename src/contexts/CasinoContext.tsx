@@ -1,0 +1,84 @@
+import React from "react";
+
+import CasinoContextInterface from "../interfaces/casino/CasinoContextInterface";
+import CasinoContextStateInterface from "../interfaces/casino/CasinoContextStateInterface";
+import GameInterface from "../interfaces/game/GameInterface";
+
+const CasinoContext = React.createContext<CasinoContextInterface>({
+  filteredGames: [],
+  filterName: "",
+  setDatabaseGames: (games: GameInterface[]) => {},
+  filterByName: (name: string) => {},
+  filterByCategory: (categoryId: number) => {},
+});
+
+export function CasinoContextProvider(
+  props: React.PropsWithChildren<{}>
+): JSX.Element {
+  const [state, setState] = React.useState<CasinoContextStateInterface>({
+    databaseGames: [],
+    filteredGames: [],
+    filterName: "",
+    filterCategoryId: 0,
+  });
+
+  const { databaseGames, filteredGames, filterName, filterCategoryId } = state;
+
+  const filterGames = (
+    games: GameInterface[],
+    name: string,
+    categoryId: number
+  ) => {
+    return games.filter((item) => {
+      if (
+        item.name.toLowerCase().includes(name.toLowerCase()) &&
+        item.categoryIds.includes(categoryId)
+      ) {
+        return item;
+      }
+    });
+  };
+
+  const setDatabaseGames = (games: GameInterface[]) => {
+    const filteredGames = filterGames(games, filterName, filterCategoryId);
+
+    setState({ ...state, databaseGames: games, filteredGames });
+  };
+
+  const filterByName = (name: string) => {
+    const filteredGames = filterGames(databaseGames, name, filterCategoryId);
+
+    setState({ ...state, filterName: name, filteredGames });
+  };
+
+  const filterByCategory = (categoryId: number) => {
+    const filteredGames = filterGames(databaseGames, filterName, categoryId);
+
+    setState({ ...state, filterCategoryId: categoryId, filteredGames });
+  };
+
+  const contextValue: CasinoContextInterface = {
+    filteredGames,
+    filterName,
+    setDatabaseGames,
+    filterByName,
+    filterByCategory,
+  };
+
+  return (
+    <CasinoContext.Provider value={contextValue}>
+      {props.children}
+    </CasinoContext.Provider>
+  );
+}
+
+export function useCasinoContext(): CasinoContextInterface {
+  const context = React.useContext<CasinoContextInterface>(CasinoContext);
+  if (!context) {
+    throw new Error(
+      "useCasinoContext must be used within a CasinoContextProvider"
+    );
+  }
+
+  return context;
+}
